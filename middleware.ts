@@ -1,23 +1,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-type Cookie = {
-  name: string
-  value: string
-  options?: any
-}
-
 export async function middleware(request: NextRequest) {
-  const supabaseResponse = NextResponse.next()
-
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // 🔒 Protección crítica para Vercel
+  // 🔒 Si falta algo, NO rompas Edge
   if (!url || !anon) {
-    console.error('Missing Supabase environment variables')
-    return supabaseResponse
+    return NextResponse.next()
   }
+
+  let response = NextResponse.next()
 
   const supabase = createServerClient(url, anon, {
     cookies: {
@@ -25,16 +18,10 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll()
       },
 
-      setAll(cookiesToSet: Cookie[]) {
-        if (!cookiesToSet?.length) return
-
-        cookiesToSet.forEach(({ name, value, options }) => {
-          try {
-            request.cookies.set(name, value)
-            supabaseResponse.cookies.set(name, value, options)
-          } catch (err) {
-            console.error('Cookie error:', err)
-          }
+      setAll(cookies) {
+        // ❗ IMPORTANTE: en Edge NO mutamos request.cookies
+        cookies?.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options)
         })
       },
     },
@@ -45,9 +32,11 @@ export async function middleware(request: NextRequest) {
   try {
     const result = await supabase.auth.getUser()
     user = result?.data?.user ?? null
-  } catch (err) {
-    console.error('Supabase auth error:', err)
+  } catch (e) {
+    console.error('Auth error:', e)
   }
+
+  const path = request.nextUrl.pathname
 
   const protectedRoutes = [
     '/partidos',
@@ -57,29 +46,23 @@ export async function middleware(request: NextRequest) {
     '/admin',
   ]
 
-  const isProtected = protectedRoutes.some((r) =>
-    request.nextUrl.pathname.startsWith(r)
-  )
+  const isProtected = protectedRoutes.some((r) => path.startsWith(r))
 
-  // 🚫 No autenticado → bloquear rutas protegidas
   if (!user && isProtected) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    return NextResponse.redirect(url)
+    const urlRedirect = request.nextUrl.clone()
+    urlRedirect.pathname = '/auth/login'
+    return NextResponse.redirect(urlRedirect)
   }
 
-  // 🔁 Autenticado → evitar login/register
-  if (user && request.nextUrl.pathname.startsWith('/auth')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return NextResponse.redirect(url)
+  if (user && path.startsWith('/auth')) {
+    const urlRedirect = request.nextUrl.clone()
+    urlRedirect.pathname = '/'
+    return NextResponse.redirect(urlRedirect)
   }
 
-  return supabaseResponse
+  return response
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
