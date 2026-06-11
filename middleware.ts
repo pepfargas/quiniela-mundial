@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   const protectedRoutes = [
@@ -15,23 +15,14 @@ export async function middleware(request: NextRequest) {
     path.startsWith(r)
   )
 
-  const isAuthPage = path.startsWith('/auth')
-
-  // 🔴 SOLO LÓGICA SIMPLE → NO EDGE CRASH POSSIBLE
-  const token = request.cookies.get('sb-access-token')?.value
-
-  const isLoggedIn = !!token
+  const isLoggedIn = request.cookies.has('sb-access-token')
 
   if (!isLoggedIn && isProtected) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
-  if (isLoggedIn && isAuthPage) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return NextResponse.redirect(url)
+  if (isLoggedIn && path.startsWith('/auth')) {
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return NextResponse.next()
