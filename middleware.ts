@@ -8,32 +8,47 @@ type Cookie = {
 }
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+  const supabaseResponse = NextResponse.next()
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-        setAll(cookiesToSet: Cookie[]) {
-          cookiesToSet.forEach(({ name, value, options }) => {
+  // 🔒 Protección crítica para Vercel
+  if (!url || !anon) {
+    console.error('Missing Supabase environment variables')
+    return supabaseResponse
+  }
+
+  const supabase = createServerClient(url, anon, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
+      },
+
+      setAll(cookiesToSet: Cookie[]) {
+        if (!cookiesToSet?.length) return
+
+        cookiesToSet.forEach(({ name, value, options }) => {
+          try {
             request.cookies.set(name, value)
             supabaseResponse.cookies.set(name, value, options)
-          })
-        },
+          } catch (err) {
+            console.error('Cookie error:', err)
+          }
+        })
       },
-    }
-  )
+    },
+  })
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null
 
-  // Rutas protegidas
+  try {
+    const result = await supabase.auth.getUser()
+    user = result?.data?.user ?? null
+  } catch (err) {
+    console.error('Supabase auth error:', err)
+  }
+
   const protectedRoutes = [
     '/partidos',
     '/apuestas-previas',
@@ -46,13 +61,14 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(r)
   )
 
+  // 🚫 No autenticado → bloquear rutas protegidas
   if (!user && isProtected) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)
   }
 
-  // Si ya está logado y va a login/register
+  // 🔁 Autenticado → evitar login/register
   if (user && request.nextUrl.pathname.startsWith('/auth')) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
