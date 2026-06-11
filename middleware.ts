@@ -18,10 +18,11 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll()
       },
 
-      setAll(cookies) {
-        // ❗ IMPORTANTE: en Edge NO mutamos request.cookies
-        cookies?.forEach(({ name, value, options }) => {
-          response.cookies.set(name, value, options)
+      setAll(cookies: any[]) {
+  cookies?.forEach(({ name, value, options }) => {
+    response.cookies.set(name, value, options)
+  })
+}
         })
       },
     },
