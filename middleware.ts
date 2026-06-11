@@ -2,36 +2,30 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const response = NextResponse.next()
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+  // 🔴 SI FALLA SUPABASE → NO ROMPER WEB
   if (!url || !anon) {
-    return NextResponse.next()
+    return response
   }
-
-  const response = NextResponse.next()
-
-  const supabase = createServerClient(url, anon, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
-      },
-
-      setAll(cookies: any[]) {
-        cookies?.forEach(({ name, value, options }) => {
-          response.cookies.set(name, value, options)
-        })
-      },
-    },
-  })
 
   let user = null
 
   try {
+    const supabase = createServerClient(url, anon, {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: () => {}, // 🔴 NO tocar cookies en edge
+      },
+    })
+
     const result = await supabase.auth.getUser()
     user = result?.data?.user ?? null
-  } catch {
-    user = null
+  } catch (e) {
+    console.error('Middleware Supabase error:', e)
   }
 
   const path = request.nextUrl.pathname
@@ -44,9 +38,7 @@ export async function middleware(request: NextRequest) {
     '/admin',
   ]
 
-  const isProtected = protectedRoutes.some((r) =>
-    path.startsWith(r)
-  )
+  const isProtected = protectedRoutes.some((r) => path.startsWith(r))
 
   if (!user && isProtected) {
     const redirect = request.nextUrl.clone()
@@ -64,7 +56,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
