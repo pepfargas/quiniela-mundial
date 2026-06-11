@@ -1,33 +1,6 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next()
-
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  // 🔴 SI FALLA SUPABASE → NO ROMPER WEB
-  if (!url || !anon) {
-    return response
-  }
-
-  let user = null
-
-  try {
-    const supabase = createServerClient(url, anon, {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: () => {}, // 🔴 NO tocar cookies en edge
-      },
-    })
-
-    const result = await supabase.auth.getUser()
-    user = result?.data?.user ?? null
-  } catch (e) {
-    console.error('Middleware Supabase error:', e)
-  }
-
   const path = request.nextUrl.pathname
 
   const protectedRoutes = [
@@ -38,21 +11,30 @@ export async function middleware(request: NextRequest) {
     '/admin',
   ]
 
-  const isProtected = protectedRoutes.some((r) => path.startsWith(r))
+  const isProtected = protectedRoutes.some((r) =>
+    path.startsWith(r)
+  )
 
-  if (!user && isProtected) {
-    const redirect = request.nextUrl.clone()
-    redirect.pathname = '/auth/login'
-    return NextResponse.redirect(redirect)
+  const isAuthPage = path.startsWith('/auth')
+
+  // 🔴 SOLO LÓGICA SIMPLE → NO EDGE CRASH POSSIBLE
+  const token = request.cookies.get('sb-access-token')?.value
+
+  const isLoggedIn = !!token
+
+  if (!isLoggedIn && isProtected) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
+    return NextResponse.redirect(url)
   }
 
-  if (user && path.startsWith('/auth')) {
-    const redirect = request.nextUrl.clone()
-    redirect.pathname = '/'
-    return NextResponse.redirect(redirect)
+  if (isLoggedIn && isAuthPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    return NextResponse.redirect(url)
   }
 
-  return response
+  return NextResponse.next()
 }
 
 export const config = {
