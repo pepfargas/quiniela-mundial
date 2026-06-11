@@ -1,137 +1,50 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer components {
   .btn-primary {
-    background-color: #eab308;
-    color: #030712;
-    font-weight: 600;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    transition: background-color 0.15s;
-    cursor: pointer;
-    display: inline-block;
+    @apply bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer inline-block;
   }
-  .btn-primary:hover { background-color: #facc15; }
-
   .btn-secondary {
-    background-color: #1f2937;
-    color: #fff;
-    font-weight: 500;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    border: 1px solid #374151;
-    transition: background-color 0.15s;
-    cursor: pointer;
-    display: inline-block;
+    @apply bg-gray-800 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg border border-gray-700 transition-colors cursor-pointer inline-block;
   }
-  .btn-secondary:hover { background-color: #374151; }
-
   .card {
-    background-color: #111827;
-    border: 1px solid #1f2937;
-    border-radius: 0.75rem;
-    padding: 1rem;
+    @apply bg-gray-900 border border-gray-800 rounded-xl p-4;
   }
-
   .card-hover {
-    background-color: #111827;
-    border: 1px solid #1f2937;
-    border-radius: 0.75rem;
-    padding: 1rem;
-    transition: border-color 0.15s;
-    cursor: pointer;
+    @apply bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-yellow-500/50 transition-colors cursor-pointer;
   }
-  .card-hover:hover { border-color: rgba(234, 179, 8, 0.5); }
-
   .input-field {
-    background-color: #1f2937;
-    border: 1px solid #374151;
-    color: #fff;
-    border-radius: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    width: 100%;
-    outline: none;
+    @apply bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent placeholder-gray-500;
   }
-  .input-field:focus { ring: 2px solid #eab308; border-color: transparent; }
-  .input-field::placeholder { color: #6b7280; }
-
   .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
   }
-
   .badge-gold {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background-color: rgba(234, 179, 8, 0.2);
-    color: #facc15;
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400;
   }
-
   .badge-green {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background-color: rgba(34, 197, 94, 0.2);
-    color: #4ade80;
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400;
   }
-
   .badge-red {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background-color: rgba(239, 68, 68, 0.2);
-    color: #f87171;
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400;
   }
-
   .badge-gray {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background-color: #374151;
-    color: #d1d5db;
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-700 text-gray-300;
   }
-
   .section-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 0.25rem;
+    @apply text-2xl font-bold text-white mb-1;
   }
-
   .section-subtitle {
-    color: #9ca3af;
-    font-size: 0.875rem;
-    margin-bottom: 1.5rem;
+    @apply text-gray-400 text-sm mb-6;
   }
-
   .tab-active {
-    border-bottom: 2px solid #eab308;
-    color: #facc15;
-    font-weight: 500;
+    @apply border-b-2 border-yellow-500 text-yellow-400 font-medium;
   }
-
   .tab-inactive {
-    color: #9ca3af;
-    transition: color 0.15s;
+    @apply text-gray-400 hover:text-gray-200 transition-colors;
   }
-  .tab-inactive:hover { color: #e5e7eb; }
 }
 
 body {
